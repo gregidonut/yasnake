@@ -21,6 +21,9 @@ func main() {
 	w.ShowAndRun()
 }
 
+// setupGame() will be the starting position for the snake
+// since it defines how everything looks before redrawing the screen
+// which would be the consequence of the game loop
 func setupGame() *fyne.Container {
 	var segments []fyne.CanvasObject
 
