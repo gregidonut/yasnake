@@ -82,15 +82,24 @@ func refreshGame() {
 
 // runGame is the main game loop that redraws the whole ui every
 // time.Tick() duration, by calling refreshGame() after changing
-// the y coordinate value (deducting it, causing the snake to go up
-// since the new position every snake segment is being assigned to
-// is decreasing
+// the appropriate coordinate value, then the rest of the snake follows
+// since the every time the game 'refreshes', everything except the last
+// snake segment persists on the screen
 func runGame() {
 	for range time.Tick(time.Millisecond * 500) {
 		for i := len(snakeParts) - 1; i >= 1; i-- {
 			snakeParts[i] = snakeParts[i-1]
 		}
-		snakeParts[0].y--
+		switch move {
+		case moveUp:
+			snakeParts[0].y--
+		case moveDown:
+			snakeParts[0].y++
+		case moveLeft:
+			snakeParts[0].x--
+		case moveRight:
+			snakeParts[0].x++
+		}
 		refreshGame()
 	}
 }
