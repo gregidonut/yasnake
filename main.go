@@ -16,6 +16,7 @@ func main() {
 	w := a.NewWindow("YASnake")
 	w.Resize(fyne.NewSize(200, 200))
 	w.SetFixedSize(true)
+	w.Canvas().SetOnTypedKey(keyTyped)
 
 	game = setupGame()
 	w.SetContent(game)
@@ -29,9 +30,19 @@ type snakePart struct {
 	x, y float32
 }
 
+type moveType int
+
+const (
+	moveUp moveType = iota
+	moveDown
+	moveLeft
+	moveRight
+)
+
 var (
 	snakeParts []snakePart
 	game       *fyne.Container
+	move       = moveUp
 )
 
 // setupGame() will be the starting position for the snake
@@ -81,5 +92,19 @@ func runGame() {
 		}
 		snakeParts[0].y--
 		refreshGame()
+	}
+}
+
+// keyTyped essentially defines the key binds for snake movements
+func keyTyped(e *fyne.KeyEvent) {
+	switch e.Name {
+	case fyne.KeyUp, fyne.KeyK:
+		move = moveUp
+	case fyne.KeyDown, fyne.KeyJ:
+		move = moveDown
+	case fyne.KeyLeft, fyne.KeyH:
+		move = moveLeft
+	case fyne.KeyRight, fyne.KeyL:
+		move = moveRight
 	}
 }
