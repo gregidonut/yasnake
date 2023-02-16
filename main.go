@@ -40,9 +40,11 @@ const (
 )
 
 var (
-	snakeParts []snakePart
-	game       *fyne.Container
-	move       = moveUp
+	snakeParts   []snakePart
+	game         *fyne.Container
+	head         *canvas.Rectangle
+	loopDuration = time.Millisecond * 500
+	move         = moveUp
 )
 
 // setupGame() will be the starting position for the snake
@@ -65,6 +67,13 @@ func setupGame() *fyne.Container {
 		snakeParts = append(snakeParts, seg)
 	}
 
+	// add a new rectangle that will represent the snake segments
+	// (to be animated)
+	head = canvas.NewRectangle(&color.RGBA{G: 0x66, A: 0xff})
+	head.Resize(fyne.NewSize(10, 10))
+	head.Move(fyne.NewPos(snakeParts[0].x*10, snakeParts[0].y*10))
+	segments = append(segments, head)
+
 	return container.NewWithoutLayout(segments...)
 }
 
@@ -82,23 +91,62 @@ func refreshGame() {
 
 // runGame is the main game loop that redraws the whole ui every
 // time.Tick() duration, by calling refreshGame() after changing
-// the appropriate coordinate value, then the rest of the snake follows
-// since the every time the game 'refreshes', everything except the last
-// snake segment persists on the screen
+// the appropriate coordinate value.
+// Calculating an old and new position for the head and tail so that
+// a *fyne.Animation can be used to render the animation
 func runGame() {
-	for range time.Tick(time.Millisecond * 500) {
+	// nextPart is the calculation of the snake's head and
+	// will be used by the head's animation as coordinates of
+	// where the head rectangle will end in the animation
+	nextPart := snakePart{snakeParts[0].x, snakeParts[0].y - 1}
+
+	for {
+		oldPos := fyne.NewPos(snakeParts[0].x*10, snakeParts[0].y*10)
+		newPos := fyne.NewPos(nextPart.x*10, nextPart.y*10)
+		canvas.NewPositionAnimation(oldPos, newPos, loopDuration, func(p fyne.Position) {
+			head.Move(p)
+			canvas.Refresh(head)
+		}).Start()
+
+		end := len(snakeParts) - 1
+		canvas.NewPositionAnimation(
+			fyne.NewPos(snakeParts[end].x*10, snakeParts[end].y*10),
+			fyne.NewPos(snakeParts[end-1].x*10, snakeParts[end-1].y*10),
+			loopDuration,
+			func(p fyne.Position) {
+				tail := game.Objects[end]
+				tail.Move(p)
+				canvas.Refresh(tail)
+			},
+		).Start()
+
+		time.Sleep(loopDuration)
 		for i := len(snakeParts) - 1; i >= 1; i-- {
 			snakeParts[i] = snakeParts[i-1]
 		}
+		snakeParts[0] = nextPart
+
 		switch move {
 		case moveUp:
-			snakeParts[0].y--
+			nextPart = snakePart{
+				x: nextPart.x,
+				y: nextPart.y - 1,
+			}
 		case moveDown:
-			snakeParts[0].y++
+			nextPart = snakePart{
+				x: nextPart.x,
+				y: nextPart.y + 1,
+			}
 		case moveLeft:
-			snakeParts[0].x--
+			nextPart = snakePart{
+				x: nextPart.x - 1,
+				y: nextPart.y,
+			}
 		case moveRight:
-			snakeParts[0].x++
+			nextPart = snakePart{
+				x: nextPart.x + 1,
+				y: nextPart.y,
+			}
 		}
 		refreshGame()
 	}
